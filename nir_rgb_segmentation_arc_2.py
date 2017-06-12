@@ -130,7 +130,7 @@ def Segment_datagen(state_aug,file_path, rgb_args, nir_args, label_args, batch_s
     files.close()
     # Enter the indefinite loop of generator
     while True:
-        for i in range(batch_size*2):
+        for i in range(batch_size):
             index_of_random_sample = np.random.choice(len(names))
             np.random.seed(i)
             data[0][i] = fix_size(cv2.imread(rgb_args.data_dir+names[index_of_random_sample].strip('\n')+rgb_args.data_ext), input_size)
