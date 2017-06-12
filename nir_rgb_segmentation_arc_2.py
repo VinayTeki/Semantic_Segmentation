@@ -141,7 +141,7 @@ def Segment_datagen(state_aug,file_path, rgb_args, nir_args, label_args, batch_s
             np.random.seed(i)
             temp = fix_size(cv2.imread(label_args.data_dir+names[index_of_random_sample].strip('\n')+label_args.data_ext), input_size)
             labels[i] = fix_label(temp,num_class)
-            labels[batch_size*2-1-i] = fix_label(data_augmentor(temp, state_aug),num_class)
+            labels[batch_size*2-1-i] = fix_label(data_augmentor(temp, state_aug, bool_random_channel_shift= False),num_class)
         yield [data[0],data[1]],[labels]
 
 #ARGUMENTS FOR DATA_GENERATOR
@@ -220,8 +220,8 @@ model.summary()
 
 # Save the model according to the conditions  
 progbar = ProgbarLogger(count_mode='steps')
-checkpoint = ModelCheckpoint("nir_rgb_segmentation_2.{epoch:02d}-{val_loss:.2f}.hdf5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-early = EarlyStopping(monitor='val_acc', min_delta=0, patience=1, verbose=1, mode='auto')
+checkpoint = ModelCheckpoint("nir_rgb_segmentation_2.{epoch:02d}.hdf5", monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+#early = EarlyStopping(monitor='val_acc', min_delta=0, patience=1, verbose=1, mode='auto')
+#haven't specified validation data directory yet
 
-
-model.fit_generator(generator,steps_per_epoch=2000,epochs=50, callbacks=[progbar,checkpoint,early])
+model.fit_generator(generator,steps_per_epoch=2000,epochs=50, callbacks=[progbar,checkpoint""",early"""])
