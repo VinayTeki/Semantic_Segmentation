@@ -64,7 +64,7 @@ def fix_size(image, crop_size):
     return image
 
 
-#CONVERTING MASKED IMAGES(image) TO A ARRAY OF PIXELWISE ONE-HOT VECTORS(of dimension 'no_class')
+#CONVERTING Ground Truth IMAGES(image) TO A ARRAY OF PIXELWISE ONE-HOT VECTORS(of dimension 'no_class')
 def fix_label(image, no_class):
     width , height, depth = image.shape
     #generating hashes for each pixel (index array above has the hash values for each class)
