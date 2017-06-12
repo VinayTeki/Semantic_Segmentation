@@ -99,6 +99,7 @@ RGB_args = gen_args ('/home/vinay/Videos/freiburg_forest_annotated/train/rgb/','
 NIR_args = gen_args ('/home/vinay/Videos/freiburg_forest_annotated/train/nir_color/','.png')
 Label_args = gen_args ('/home/vinay/Videos/freiburg_forest_annotated/train/GT_color/','.png')
 
+# the first argument (file_path) is a text file which contains all the image file names (one in each line)
 generator = Segment_datagen(
     file_path = '/home/vinay/Videos/freiburg_forest_annotated/train/rgb/train.txt',
     rgb_args = RGB_args,
