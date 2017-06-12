@@ -12,6 +12,9 @@ The path to the text file will be mentioned in the comments of the code.
 This repository contains two files::
 
 1.nir_rgb_segmentation_arc_1.py :: which corresponds to "CHANNEL-STACKING MODEL" in the mentioned reference above
+#NOTE: Data augmentation is not done in this code, but it is implemented in the NEXT FILE
+The augmentation part is same for both the codes, so you can simply copy paste that part to this code if needed.
+('nir_rgb_segmentation_arc_2.py')
 
 2.nir_rgb_segmentation_arc_2.py :: which corresponds to "LATE-FUSED CONVOLUTION MODEL" in the mentioned reference above
 
