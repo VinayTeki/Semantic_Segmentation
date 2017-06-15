@@ -158,6 +158,11 @@ generator = Segment_datagen(state_aug,
     batch_size= 8,
     input_size=input_dim)
 
+
+#---------------------------------lamda layers for handling gating-----------------------------------------
+
+
+
 #================================================MODEL_ARCHITECTURE============================================================
 
 # RGB MODALITY BRANCH OF CNN
@@ -179,6 +184,7 @@ deconv_rgb_4 = Conv2DTranspose(num_class*C,(4,4), strides=(2, 2), padding='same'
 conv_rgb_4 = Conv2D(num_class*C, (3,3), strides=(1,1), padding = 'same', activation='relu', data_format='channels_last')(deconv_rgb_4)
 deconv_rgb_5 = Conv2DTranspose(num_class*C,(4,4), strides=(2, 2), padding='same', data_format="channels_last", activation='relu',kernel_initializer='glorot_normal')(conv_rgb_4)
 
+
 # NIR MODALITY BRANCH OF CNN
 inputs_nir = Input(shape=(input_dim[0],input_dim[1],3))
 vgg_model_nir = VGG16(weights='imagenet', include_top= False)
@@ -199,22 +205,48 @@ conv_nir_4 = Conv2D(num_class*C, (3,3), strides=(1,1), padding = 'same', activat
 deconv_nir_5 = Conv2DTranspose(num_class*C,(4,4), strides=(2, 2), padding='same', data_format="channels_last", activation='relu',kernel_initializer='glorot_normal')(conv_nir_4)
 
 
-#------------------------------------ the adaptive gain network------------------------------------------------
-
+#------------------------------------ the adaptive gating network------------------------------------------------
 
 # CONACTENATE the features of RGB & NIR 
 adaptive_merge = keras.layers.concatenate([conv_model_rgb_a, conv_model_nir_a], axis=-1)
 
 adaptive_conv = Conv2D(num_class, (3,3), strides=(2,2), padding = 'same', activation='relu', data_format='channels_last')(adaptive_merge)
 adaptive_conv = Conv2D(1, (3,3), strides=(2,2), padding = 'same', activation='relu', data_format='channels_last')(adaptive_conv)
-adaptive_vec = core.Reshape(-1)(adaptive_conv)
+adaptive_vec = core.Reshape((1,-1))(adaptive_conv)
 soft_dense = Dense(2,activation = 'softmax')(adaptive_vec)
 
+#------------------------------------------------------------------------------------------
+inshape = deconv_nir_5._keras_shape
+print inshape
+before_merge_rgb = core.Flatten()(deconv_rgb_5)
+print before_merge_rgb._keras_shape
+before_merge_nir = core.Flatten()(deconv_nir_5)
+print  before_merge_nir._keras_shape
+merge_flat = keras.layers.concatenate([before_merge_rgb,before_merge_nir])
+print merge_flat._keras_shape
+
+soft_flat = core.Flatten()(soft_dense)
+print soft_flat._keras_shape
+repeat = core.RepeatVector(before_merge_nir._keras_shape[1])(soft_flat)
+print repeat._keras_shape
+repeat_flat = core.Flatten()(repeat)
+print  repeat_flat._keras_shape
+
+reshape_now = keras.layers.multiply([repeat_flat, merge_flat])
+reshape_now = core.Reshape((2,-1))(reshape_now)
+outshape =  reshape_now._keras_shape
+
+layer1 = core.Lambda(lambda x: x[:,0:1,:], output_shape=lambda x: (outshape[0],1, outshape[2]))(reshape_now)
+layer2 = core.Lambda(lambda x: x[:,1:2,:], output_shape=lambda x: (outshape[0],1, outshape[2]))(reshape_now)
+
+
 #-------------------------------------------------------------------------------------------------------------------------------
-
-
 # CONACTENATE the ends of RGB & NIR 
-merge_rgb_nir = keras.layers.concatenate([deconv_rgb_5, deconv_nir_5], axis=-1)
+merge_rgb_nir = keras.layers.add([layer1,layer2])
+print merge_rgb_nir._keras_shape
+#merge_rgb_nir = keras.layers.merge([soft_dense,before_merge_rgb,before_merge_nir], mode=scalarmult)
+merge_rgb_nir = core.Flatten()(merge_rgb_nir)
+merge_rgb_nir = core.Reshape((inshape[1],inshape[2],inshape[3]))(merge_rgb_nir)
 
 # DECONVOLUTION Layers
 deconv_last = Conv2DTranspose(num_class, (1,1), strides=(1, 1), padding='same', data_format="channels_last", activation='relu',kernel_initializer='glorot_normal') (merge_rgb_nir)
@@ -224,7 +256,7 @@ out_reshape = core.Reshape((input_dim[0]*input_dim[1],num_class))(deconv_last)
 out = core.Activation('softmax')(out_reshape)
 
 # MODAL [INPUTS , OUTPUTS]
-model = Model(inputs=[inputs_rgb,inputs_nir], outputs=[out])
+model = Model(inputs=[inputs_rgb,inputs_nir], outputs=[out, soft_dense])
 print 'compiling'
 model.compile(optimizer='sgd',
               loss='categorical_crossentropy',
@@ -236,6 +268,7 @@ model.summary()
 progbar = ProgbarLogger(count_mode='steps')
 checkpoint = ModelCheckpoint("nir_rgb_segmentation_2.{epoch:02d}-{val_loss:.2f}.hdf5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 early = EarlyStopping(monitor='val_acc', min_delta=0, patience=1, verbose=1, mode='auto')
+
 
 model.fit_generator(generator,steps_per_epoch=2000,epochs=50, callbacks=[progbar,checkpoint,early])
 """
