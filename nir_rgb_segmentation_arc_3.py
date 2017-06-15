@@ -237,6 +237,5 @@ progbar = ProgbarLogger(count_mode='steps')
 checkpoint = ModelCheckpoint("nir_rgb_segmentation_2.{epoch:02d}-{val_loss:.2f}.hdf5", monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 early = EarlyStopping(monitor='val_acc', min_delta=0, patience=1, verbose=1, mode='auto')
 
-
 model.fit_generator(generator,steps_per_epoch=2000,epochs=50, callbacks=[progbar,checkpoint,early])
 """
